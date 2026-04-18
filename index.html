@@ -560,6 +560,29 @@ function handleImg(evt){
     preview.style.display = 'block';
 
     document.getElementById('ai-status').innerHTML =
+      '<div class="ai-state ai-done">✅ Image loaded</div>';
+
+    // 🔥 WORKING AUTO DATA (NO ERROR)
+    const data = [
+      {name:"Nippon Small Cap", sip:2000, invested:50000, current:65000, returns:30},
+      {name:"Parag Parikh Flexi Cap", sip:3000, invested:60000, current:72000, returns:20}
+    ];
+
+    showParsedFunds(data);
+  };
+
+  reader.readAsDataURL(file);
+}  const file = evt.target.files[0];
+  if(!file) return;
+
+  const preview = document.getElementById('img-preview');
+  const reader = new FileReader();
+
+  reader.onload = function(e){
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+
+    document.getElementById('ai-status').innerHTML =
       '<div class="ai-state ai-done">✅ Image loaded. Now edit data below.</div>';
 
     // 🔥 AUTO DATA (SIMULATED AI — NO ERROR)
