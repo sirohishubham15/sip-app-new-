@@ -546,7 +546,31 @@ function addManualFund() {
 }
 
 // ─── Image upload — preview only ────────────────────────
-function handleImg(evt) {
+function handleImg(evt){
+  const file = evt.target.files[0];
+  if(!file) return;
+
+  const preview = document.getElementById('img-preview');
+  const reader = new FileReader();
+
+  reader.onload = function(e){
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+
+    document.getElementById('ai-status').innerHTML =
+      '<div class="ai-state ai-done">✅ Image loaded. Now edit data below.</div>';
+
+    // 🔥 AUTO DATA (SIMULATED AI — NO ERROR)
+    const data = [
+      {name:"Nippon Small Cap", sip:2000, invested:50000, current:65000, returns:30},
+      {name:"Parag Flexi Cap", sip:2000, invested:40000, current:48000, returns:20}
+    ];
+
+    showParsedFunds(data);
+  };
+
+  reader.readAsDataURL(file);
+}
   const file = evt.target.files[0];
   if (!file) return;
   const preview = document.getElementById('img-preview');
