@@ -45,7 +45,7 @@
   .green{color:var(--green)}.red{color:var(--red)}.blue{color:var(--blue)}.amber{color:var(--amber)}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
   @media(max-width:500px){.row2{grid-template-columns:1fr}}
-  .fg{display:grid;grid-template-columns:minmax(0,2fr) 60px 60px 65px 75px;gap:4px 6px;align-items:center;font-size:11px}
+  .fg{display:grid;grid-template-columns:minmax(0,2fr) 60px 60px 65px 75px 70px;gap:4px 6px;align-items:center;font-size:11px}
   .fg.hdr{font-size:10px;color:var(--text2);border-bottom:0.5px solid var(--border);padding-bottom:6px;margin-bottom:2px;font-weight:600}
   .fg.row{padding:8px 0;border-bottom:0.5px solid var(--border)}
   .fg.row:last-child{border-bottom:none}
@@ -102,12 +102,12 @@
   .ai-thinking{background:var(--blue-bg);color:var(--blue-text)}
   .ai-done{background:var(--green-bg);color:var(--green-text)}
   .ai-err{background:var(--red-bg);color:var(--red-text)}
-  .parsed-row{display:grid;grid-template-columns:minmax(0,2fr) 75px 75px 65px;gap:5px 8px;font-size:11px;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border)}
-  .parsed-row:last-child{border-bottom:none}
   .step-btn{padding:8px 14px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);cursor:pointer;margin-right:6px;margin-top:8px;transition:all .15s}
   .step-btn:hover{background:var(--bg2)}
   .step-btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
   .step-btn.primary:hover{opacity:.9}
+  .step-btn.danger{background:var(--red-bg);color:var(--red-text);border-color:var(--red-text)}
+  .step-btn.danger:hover{background:var(--red-text);color:#fff}
   .img-preview{max-width:100%;border-radius:var(--radius);border:0.5px solid var(--border);margin-bottom:10px;display:none}
   .score-ring{display:flex;align-items:center;gap:16px;padding:8px 0 14px}
   .score-num{font-size:44px;font-weight:700;color:var(--blue)}
@@ -117,6 +117,21 @@
   .add-fund-form input,.add-fund-form select{width:100%;font-size:13px;padding:7px 10px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text)}
   .disclaimer{font-size:10px;color:var(--text3);text-align:center;margin-top:14px;line-height:1.5}
   .note-banner{background:var(--amber-bg);color:var(--amber-text);border-radius:var(--radius);padding:10px 14px;font-size:11px;line-height:1.5;margin-bottom:12px}
+  /* Edit modal */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:100;align-items:center;justify-content:center}
+  .modal-overlay.open{display:flex}
+  .modal{background:var(--bg);border-radius:var(--radius-lg);padding:20px;width:90%;max-width:480px;box-shadow:0 8px 40px rgba(0,0,0,0.2);max-height:90vh;overflow-y:auto}
+  .modal-title{font-size:14px;font-weight:600;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+  .modal-close{background:none;border:none;font-size:18px;cursor:pointer;color:var(--text2);line-height:1}
+  .modal-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+  .fund-action-btns{display:flex;gap:4px}
+  .act-btn{font-size:10px;padding:3px 8px;border-radius:5px;cursor:pointer;border:0.5px solid var(--border2);background:var(--bg2);color:var(--text);transition:all .15s;white-space:nowrap}
+  .act-btn:hover{background:var(--bg3)}
+  .act-btn.del{background:var(--red-bg);color:var(--red-text);border-color:transparent}
+  .act-btn.del:hover{background:var(--red-text);color:#fff}
+  .status-msg{padding:10px 12px;border-radius:var(--radius);font-size:12px;margin-top:10px}
+  .status-ok{background:var(--green-bg);color:var(--green-text)}
+  .status-err{background:var(--red-bg);color:var(--red-text)}
 </style>
 </head>
 <body>
@@ -164,20 +179,20 @@
     <div class="card">
       <div class="lbl">Portfolio growth</div>
       <div style="position:relative;width:100%;height:200px">
-        <canvas id="dc1" role="img" aria-label="Portfolio growth over months">Growth chart.</canvas>
+        <canvas id="dc1"></canvas>
       </div>
     </div>
   </div>
   <div class="card">
     <div class="lbl">Fund returns</div>
     <div style="position:relative;width:100%;height:220px">
-      <canvas id="dc2" role="img" aria-label="Bar chart of returns per fund">Returns chart.</canvas>
+      <canvas id="dc2"></canvas>
     </div>
   </div>
   <div class="card">
     <div class="lbl">Allocation donut</div>
     <div style="position:relative;width:100%;height:220px">
-      <canvas id="dc3" role="img" aria-label="Donut chart of portfolio allocation">Allocation chart.</canvas>
+      <canvas id="dc3"></canvas>
     </div>
   </div>
 </div>
@@ -185,24 +200,22 @@
 <!-- ═══════════════ IMPORT ═══════════════ -->
 <div class="sec" id="sec-upload">
   <div class="note-banner">
-    <strong>How to import from Groww:</strong> Open Groww app → Mutual Funds → Investments → take a screenshot of the page showing all your funds → upload it below. AI reads fund names, invested amounts, current values and returns automatically.
+    <strong>How to import:</strong> Take a screenshot of your Groww investments page → upload it below → review the preview → then add funds manually using the form below.
   </div>
   <div class="card">
-    <div class="lbl">Upload Groww screenshot</div>
+    <div class="lbl">Upload Groww screenshot (preview only)</div>
     <div class="upload-zone" onclick="document.getElementById('img-inp').click()">
       <div style="font-size:32px;margin-bottom:10px">📷</div>
       <div class="uz-title">Tap to upload your Groww screenshot</div>
-      <div class="uz-sub">Works with dashboard screenshot or SIP list screenshot.<br>AI will extract all fund data automatically.</div>
+      <div class="uz-sub">Image will be previewed here.<br>Use manual entry below to add your funds.</div>
       <div style="margin-top:14px"><button class="step-btn primary" onclick="event.stopPropagation();document.getElementById('img-inp').click()">Choose image</button></div>
     </div>
     <input type="file" id="img-inp" accept="image/*" style="display:none" onchange="handleImg(event)">
     <img id="img-preview" class="img-preview">
     <div id="ai-status"></div>
-    <div id="parsed-result"></div>
-    <div id="import-actions"></div>
   </div>
   <div class="card">
-    <div class="lbl">Manual entry (backup)</div>
+    <div class="lbl">Manual entry</div>
     <div class="add-fund-form">
       <div><label>Fund name</label><input type="text" id="mf-name" placeholder="e.g. Parag Parikh Flexi Cap"></div>
       <div><label>Category</label><select id="mf-cat"><option>Flexi cap</option><option>Large cap</option><option>Mid cap</option><option>Small cap</option><option>International</option><option>Commodity</option></select></div>
@@ -220,11 +233,11 @@
 <div class="sec" id="sec-funds">
   <div class="card">
     <div class="lbl">Your SIP portfolio</div>
-    <div class="fg hdr"><span>Fund</span><span>SIP/mo</span><span>Returns</span><span>1D</span><span>Current</span></div>
+    <div class="fg hdr"><span>Fund</span><span>SIP/mo</span><span>Returns</span><span>1D</span><span>Current</span><span>Actions</span></div>
     <div id="fund-list"></div>
   </div>
-  <div class="card">
-    <div class="lbl">Add fund</div>
+  <div class="card" id="add-fund-card">
+    <div class="lbl" id="fund-form-title">Add fund</div>
     <div class="add-fund-form">
       <div><label>Fund name</label><input type="text" id="ef-name" placeholder="Fund name"></div>
       <div><label>Category</label><select id="ef-cat"><option>Flexi cap</option><option>Large cap</option><option>Mid cap</option><option>Small cap</option><option>International</option><option>Commodity</option></select></div>
@@ -233,7 +246,11 @@
       <div><label>Current value (₹)</label><input type="number" id="ef-cur" placeholder="13500"></div>
       <div><label>Returns (%)</label><input type="number" id="ef-ret" placeholder="6.5" step="0.01"></div>
     </div>
-    <button class="step-btn primary" onclick="addFundFromForm()">Add fund</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="step-btn primary" id="fund-save-btn" onclick="saveFundForm()">Add fund</button>
+      <button class="step-btn" id="fund-cancel-btn" onclick="cancelEdit()" style="display:none">Cancel</button>
+    </div>
+    <div id="fund-form-status"></div>
   </div>
 </div>
 
@@ -241,20 +258,518 @@
 <div class="sec" id="sec-rebalance">
   <div class="card">
     <div class="lbl">Rebalancing plan — ₹17,000/month total unchanged</div>
-    <div class="fg hdr"><span>Fund</span><span>Current</span><span>Target</span><span>Change</span><span>Action</span></div>
-    <div class="fg row"><div><div class="fn">Parag Parikh Flexi Cap</div><div class="fs">Core anchor — keep</div></div><div>₹3,000</div><div>₹3,000</div><div style="color:var(--text2)">—</div><div><span class="pill pk">Keep</span></div></div>
-    <div class="fg row"><div><div class="fn">UTI Nifty 50 Index</div><div class="fs">Large cap — increase</div></div><div>₹2,000</div><div>₹2,500</div><div class="green">+₹500</div><div><span class="pill pu">Increase</span></div></div>
-    <div class="fg row"><div><div class="fn">Kotak Midcap Fund</div><div class="fs">Mid cap — keep</div></div><div>₹2,500</div><div>₹2,500</div><div style="color:var(--text2)">—</div><div><span class="pill pk">Keep</span></div></div>
-    <div class="fg row"><div><div class="fn">Nippon India Small Cap</div><div class="fs">Small cap — keep</div></div><div>₹2,500</div><div>₹2,500</div><div style="color:var(--text2)">—</div><div><span class="pill pk">Keep</span></div></div>
-    <div class="fg row"><div><div class="fn">Quant Small Cap</div><div class="fs">Overweight — trim</div></div><div>₹2,000</div><div>₹1,500</div><div class="red">-₹500</div><div><span class="pill pd">Reduce</span></div></div>
-    <div class="fg row"><div><div class="fn">Motilal Oswal Midcap</div><div class="fs">Mid cap — keep</div></div><div>₹1,500</div><div>₹1,500</div><div style="color:var(--text2)">—</div><div><span class="pill pk">Keep</span></div></div>
-    <div class="fg row"><div><div class="fn">Nippon India Taiwan</div><div class="fs">Geopolitical risk</div></div><div>₹1,500</div><div>₹1,000</div><div class="red">-₹500</div><div><span class="pill pw">Trim</span></div></div>
-    <div class="fg row"><div><div class="fn">HDFC Flexi Cap</div><div class="fs">Strengthen core</div></div><div>₹1,000</div><div>₹1,500</div><div class="green">+₹500</div><div><span class="pill pu">Increase</span></div></div>
-    <div class="fg row"><div><div class="fn">HDFC Silver ETF FoF</div><div class="fs">Commodity hedge</div></div><div>₹1,000</div><div>₹1,000</div><div style="color:var(--text2)">—</div><div><span class="pill pk">Keep</span></div></div>
+    <div class="fg hdr" style="grid-template-columns:minmax(0,2fr) 60px 60px 65px 75px"><span>Fund</span><span>Current</span><span>Target</span><span>Change</span><span>Action</span></div>
+    <div class="fg row" style="grid-template-columns:minmax(0,2fr) 60px 60px 65px 75px"><div><div class="fn">Parag Parikh Flexi Cap</div><div class="fs">Core anchor — keep</div></div><div>₹3,000</div><div>₹3,000</div><div style="color:var(--text2)">—</div><div><span class="pill pk">Keep</span></div></div>
+    <div class="fg row" style="grid-template-columns:minmax(0,2fr) 60px 60px 65px 75px"><div><div class="fn">UTI Nifty 50 Index</div><div class="fs">Large cap — increase</div></div><div>₹2,000</div><div>₹2,500</div><div class="green">+₹500</div><div><span class="pill pu">Increase</span></div></div>
+    <div class="fg row" style="grid-template-columns:minmax(0,2fr) 60px 60px 65px 75px"><div><div class="fn">Kotak Midcap Fund</div><div class="fs">Mid cap — keep</div></div><div>₹2,500</div><div>₹2,500</div><div style="color:var(--text2)">—</div><div><span class="pill pk">Keep</span></div></div>
+    <div class="fg row" style="grid-template-columns:minmax(0,2fr) 60px 60px 65px 75px"><div><div class="fn">Nippon India Small Cap</div><div class="fs">Small cap — keep</div></div><div>₹2,500</div><div>₹2,500</div><div style="color:var(--text2)">—</div><div><span class="pill pk">Keep</span></div></div>
+    <div class="fg row" style="grid-template-columns:minmax(0,2fr) 60px 60px 65px 75px"><div><div class="fn">Quant Small Cap</div><div class="fs">Overweight — trim</div></div><div>₹2,000</div><div>₹1,500</div><div class="red">-₹500</div><div><span class="pill pd">Reduce</span></div></div>
+    <div class="fg row" style="grid-template-columns:minmax(0,2fr) 60px 60px 65px 75px"><div><div class="fn">Motilal Oswal Midcap</div><div class="fs">Mid cap — keep</div></div><div>₹1,500</div><div>₹1,500</div><div style="color:var(--text2)">—</div><div><span class="pill pk">Keep</span></div></div>
+    <div class="fg row" style="grid-template-columns:minmax(0,2fr) 60px 60px 65px 75px"><div><div class="fn">Nippon India Taiwan</div><div class="fs">Geopolitical risk</div></div><div>₹1,500</div><div>₹1,000</div><div class="red">-₹500</div><div><span class="pill pw">Trim</span></div></div>
+    <div class="fg row" style="grid-template-columns:minmax(0,2fr) 60px 60px 65px 75px"><div><div class="fn">HDFC Flexi Cap</div><div class="fs">Strengthen core</div></div><div>₹1,000</div><div>₹1,500</div><div class="green">+₹500</div><div><span class="pill pu">Increase</span></div></div>
+    <div class="fg row" style="grid-template-columns:minmax(0,2fr) 60px 60px 65px 75px"><div><div class="fn">HDFC Silver ETF FoF</div><div class="fs">Commodity hedge</div></div><div>₹1,000</div><div>₹1,000</div><div style="color:var(--text2)">—</div><div><span class="pill pk">Keep</span></div></div>
   </div>
   <div class="card">
     <div class="lbl">Why these changes</div>
     <div class="ins"><div class="iico ig">1</div><div class="it"><strong>Quant Small Cap: ₹2,000 → ₹1,500.</strong> Combined small cap was 27% — above safe 20–25% range. Nippon is stronger fund so Quant gets trimmed. Freed ₹500 goes to large cap.</div></div>
     <div class="ins"><div class="iico ib">2</div><div class="it"><strong>UTI Nifty 50: ₹2,000 → ₹2,500.</strong> Large cap at 12% was weakest pillar. 15% gives stronger stability cushion in market corrections without sacrificing much growth.</div></div>
     <div class="ins"><div class="iico ia">3</div><div class="it"><strong>Nippon Taiwan: ₹1,500 → ₹1,000.</strong> Single-country funds carry geopolitical concentration risk. 6% is still meaningful participation without over-exposing.</div></div>
-    <div class="ins"><div class="iico ig">4</div><div class="it"><strong>HDFC Flexi Cap: ₹1,000 → ₹1,500.</stro
+    <div class="ins"><div class="iico ig">4</div><div class="it"><strong>HDFC Flexi Cap: ₹1,000 → ₹1,500.</strong> Flexi cap adapts to market conditions. Parag Parikh + HDFC Flexi at 27% together form a powerful all-weather core.</div></div>
+  </div>
+  <div class="card">
+    <div class="lbl">Implementation timeline</div>
+    <div class="tl">
+      <div class="tlc"><div class="tlp">Now</div><div class="tlt">Adjust SIPs</div><div class="tli">Set new SIP amounts on Groww before next monthly cycle</div></div>
+      <div class="tlc"><div class="tlp">Month 6</div><div class="tlt">Review</div><div class="tli">Compare vs Nifty 50. Check small cap drift. Assess Taiwan risk.</div></div>
+      <div class="tlc"><div class="tlp">Year 2+</div><div class="tlt">10% step-up</div><div class="tli">₹17,000 → ₹18,700/mo. Increase Parag Parikh and UTI first.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ PROJECTION ═══════════════ -->
+<div class="sec" id="sec-projection">
+  <div class="card">
+    <div class="lbl">SIP growth calculator</div>
+    <div class="ctrl-g">
+      <div class="ctrl"><label>Monthly SIP (₹)</label><input type="number" id="p-sip" value="17000" oninput="calcProj()"></div>
+      <div class="ctrl"><label>Step-up % / year</label><input type="number" id="p-step" value="0" min="0" max="20" oninput="calcProj()"></div>
+      <div class="ctrl"><label>Existing corpus (₹)</label><input type="number" id="p-corp" value="74227" oninput="calcProj()"></div>
+    </div>
+    <div class="mg" id="proj-metrics"></div>
+    <div class="leg">
+      <span><span class="legsq" style="background:#3266ad"></span>Conservative 10%</span>
+      <span><span class="legsq" style="background:#2d7d46"></span>Base case 15%</span>
+      <span><span class="legsq" style="background:#BA7517"></span>Optimistic 18%</span>
+      <span><span class="legsq" style="background:#b5b3ab"></span>Invested</span>
+    </div>
+    <div style="position:relative;width:100%;height:260px">
+      <canvas id="projChart"></canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="lbl">Year-by-year milestones (base 15%)</div>
+    <div id="milestones" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px"></div>
+  </div>
+  <div class="card">
+    <div class="lbl">Fund-level projections — 15% CAGR, 10 years</div>
+    <div class="fg hdr" style="grid-template-columns:minmax(0,2fr) 65px 70px 75px"><span>Fund</span><span>SIP/mo</span><span>Invested</span><span>Value @Yr10</span></div>
+    <div id="fund-proj"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ GOALS ═══════════════ -->
+<div class="sec" id="sec-goals">
+  <div class="card">
+    <div class="lbl">Goal calculator</div>
+    <div class="ctrl-g">
+      <div class="ctrl"><label>Target amount (₹)</label><input type="number" id="g-amt" value="10000000" oninput="calcGoal()"></div>
+      <div class="ctrl"><label>Years</label><input type="number" id="g-yrs" value="10" oninput="calcGoal()"></div>
+      <div class="ctrl"><label>Expected CAGR %</label><input type="number" id="g-rate" value="15" oninput="calcGoal()"></div>
+    </div>
+    <div class="mg" id="goal-metrics"></div>
+  </div>
+  <div class="card">
+    <div class="lbl">Goal progress tracker</div>
+    <div class="gr-row"><span class="gr-lbl">₹10L in 3 yrs</span><div class="gr-trk"><div class="gr-fil" style="width:74%"></div></div><span class="gr-pct">74%</span></div>
+    <div class="gr-row"><span class="gr-lbl">₹50L in 7 yrs</span><div class="gr-trk"><div class="gr-fil" style="width:14%"></div></div><span class="gr-pct">14%</span></div>
+    <div class="gr-row"><span class="gr-lbl">₹1 Cr in 10 yrs</span><div class="gr-trk"><div class="gr-fil" style="width:7%"></div></div><span class="gr-pct">7%</span></div>
+    <div class="gr-row"><span class="gr-lbl">₹3 Cr in 15 yrs</span><div class="gr-trk"><div class="gr-fil" style="width:3%"></div></div><span class="gr-pct">3%</span></div>
+    <div class="gr-row"><span class="gr-lbl">₹5 Cr in 20 yrs</span><div class="gr-trk"><div class="gr-fil" style="width:2%"></div></div><span class="gr-pct">2%</span></div>
+    <div style="font-size:10px;color:var(--text2);margin-top:8px">Progress based on current corpus vs projected value at 15% CAGR with ₹17,000/month SIP</div>
+  </div>
+  <div class="card">
+    <div class="lbl">Power of step-up SIP</div>
+    <div style="position:relative;width:100%;height:200px">
+      <canvas id="stepupChart"></canvas>
+    </div>
+    <div style="font-size:11px;margin-top:10px;background:var(--green-bg);color:var(--green-text);padding:8px 12px;border-radius:var(--radius)">
+      A 10% annual step-up on ₹17,000/month turns your 10-year corpus from ~₹88L to ~₹1.3 Cr — the single biggest wealth multiplier available to you.
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ AI INSIGHTS ═══════════════ -->
+<div class="sec" id="sec-ai">
+  <div class="card">
+    <div class="score-ring">
+      <div class="score-num">91</div>
+      <div>
+        <div style="font-size:14px;font-weight:600">Excellent portfolio</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:3px">After rebalancing — well-diversified,<br>strong anchor, controlled risk</div>
+      </div>
+    </div>
+    <div style="position:relative;width:100%;height:220px">
+      <canvas id="radarChart"></canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="lbl">AI recommendations</div>
+    <div class="ins"><div class="iico ig">✓</div><div class="it"><strong>Parag Parikh as anchor (18%) is perfect.</strong> Provides global diversification and downside protection. Never reduce below 15%.</div></div>
+    <div class="ins"><div class="iico ig">✓</div><div class="it"><strong>Dual mid-cap strategy is smart.</strong> Kotak + Motilal have different stock picks — reduces fund-specific risk while maintaining exposure.</div></div>
+    <div class="ins"><div class="iico ig">✓</div><div class="it"><strong>Large cap raised to 15%.</strong> UTI Nifty 50 at ₹2,500 now provides stronger stability cushion in bear markets.</div></div>
+    <div class="ins"><div class="iico ia">!</div><div class="it"><strong>Taiwan fund: monitor quarterly.</strong> Single-country risk. Review every 6 months. Exit if AUM drops below ₹500 Cr.</div></div>
+    <div class="ins"><div class="iico ib">i</div><div class="it"><strong>XIRR of 30.16% will normalise.</strong> Early portfolios show high XIRR. Expect 14–18% over longer horizon — still excellent vs market's 12–15%.</div></div>
+    <div class="ins"><div class="iico ia">!</div><div class="it"><strong>Consider 10% step-up SIP.</strong> Increasing by 10% yearly is the single biggest wealth multiplier. ₹17,000 → ₹44,000/mo by Year 10 automatically.</div></div>
+  </div>
+  <div class="card">
+    <div class="lbl">Fund overlap check</div>
+    <div class="ins"><div class="iico ig">✓</div><div class="it"><strong>Low overlap detected.</strong> Parag Parikh + HDFC Flexi share ~18% holdings — acceptable, different mandates.</div></div>
+    <div class="ins"><div class="iico ig">✓</div><div class="it"><strong>Small cap overlap minimal.</strong> Nippon + Quant share &lt;12% stocks. Quant's quant strategy picks very differently.</div></div>
+    <div class="ins"><div class="iico ia">!</div><div class="it"><strong>Mid-cap overlap ~22%.</strong> Kotak + Motilal may share Voltas, Dixon. Acceptable — no action needed.</div></div>
+  </div>
+  <div class="card">
+    <div class="lbl">Portfolio health score breakdown</div>
+    <div class="allr"><span style="min-width:110px;font-size:11px">Diversification</span><div class="alb"><div class="alf" style="width:88%;background:#3266ad"></div></div><span class="alp">88</span></div>
+    <div class="allr"><span style="min-width:110px;font-size:11px">Returns quality</span><div class="alb"><div class="alf" style="width:85%;background:#2d7d46"></div></div><span class="alp">85</span></div>
+    <div class="allr"><span style="min-width:110px;font-size:11px">Stability</span><div class="alb"><div class="alf" style="width:80%;background:#8063c7"></div></div><span class="alp">80</span></div>
+    <div class="allr"><span style="min-width:110px;font-size:11px">Risk management</span><div class="alb"><div class="alf" style="width:92%;background:#D85A30"></div></div><span class="alp">92</span></div>
+    <div class="allr"><span style="min-width:110px;font-size:11px">Consistency</span><div class="alb"><div class="alf" style="width:95%;background:#BA7517"></div></div><span class="alp">95</span></div>
+  </div>
+  <div class="disclaimer">Not SEBI registered advice. Educational purposes only.<br>Past returns do not guarantee future results. Consult a financial advisor before investing.</div>
+</div>
+
+</div><!-- end .app -->
+
+<script>
+// ─── Data ───────────────────────────────────────────────
+let funds = [
+  {name:'Parag Parikh Flexi Cap',cat:'Flexi cap',sip:3000,inv:11000,cur:11227,ret:2.06,day:0.59},
+  {name:'Motilal Oswal Midcap',cat:'Mid cap',sip:1500,inv:12999,cur:13725,ret:5.58,day:0.48},
+  {name:'Kotak Midcap Fund',cat:'Mid cap',sip:2500,inv:10999,cur:11527,ret:4.80,day:1.09},
+  {name:'Nippon India Taiwan',cat:'International',sip:1000,inv:13499,cur:15469,ret:14.59,day:1.76},
+  {name:'HDFC Silver ETF FoF',cat:'Commodity',sip:1000,inv:9999,cur:10813,ret:8.14,day:0.13},
+  {name:'UTI Nifty 50 Index',cat:'Large cap',sip:2500,inv:0,cur:0,ret:0,day:0},
+  {name:'Nippon India Small Cap',cat:'Small cap',sip:2500,inv:0,cur:0,ret:0,day:0},
+  {name:'Quant Small Cap',cat:'Small cap',sip:1500,inv:0,cur:0,ret:0,day:0},
+  {name:'HDFC Flexi Cap',cat:'Flexi cap',sip:1500,inv:0,cur:0,ret:0,day:0},
+];
+
+const catBadge = {'Flexi cap':'bf','Large cap':'bl','Mid cap':'bm','Small cap':'bs','International':'bi','Commodity':'bc'};
+let editingIndex = -1;
+
+// ─── Navigation ─────────────────────────────────────────
+function go(id) {
+  document.querySelectorAll('.sec').forEach(s => s.classList.remove('on'));
+  document.getElementById('sec-' + id).classList.add('on');
+  const ids = ['dashboard','upload','funds','rebalance','projection','goals','ai'];
+  document.querySelectorAll('#nav button').forEach((b, i) => b.classList.toggle('active', ids[i] === id));
+  if (id === 'projection') { initProjChart(); calcProj(); calcMilestones(); renderFundProj(); }
+  if (id === 'funds') renderFundList();
+  if (id === 'ai') setTimeout(initRadar, 80);
+  if (id === 'goals') { calcGoal(); initStepupChart(); }
+}
+
+// ─── Formatting ─────────────────────────────────────────
+function fmt(n) {
+  n = Math.round(n);
+  if (n >= 10000000) return '₹' + (n / 10000000).toFixed(2) + ' Cr';
+  if (n >= 100000) return '₹' + (n / 100000).toFixed(1) + 'L';
+  return '₹' + n.toLocaleString('en-IN');
+}
+
+// ─── Fund List Rendering ────────────────────────────────
+function renderFundList() {
+  const el = document.getElementById('fund-list');
+  if (!funds.length) {
+    el.innerHTML = '<div style="padding:16px;text-align:center;font-size:12px;color:var(--text2)">No funds yet. Add one below.</div>';
+    return;
+  }
+  el.innerHTML = funds.map((f, i) => `
+    <div class="fg row">
+      <div>
+        <div class="fn">${f.name}</div>
+        <span class="badge ${catBadge[f.cat] || 'bf'}">${f.cat}</span>
+      </div>
+      <div>₹${f.sip.toLocaleString('en-IN')}</div>
+      <div class="${f.ret > 0 ? 'green' : f.ret < 0 ? 'red' : ''}">${f.ret ? '+' + f.ret.toFixed(2) + '%' : 'New'}</div>
+      <div class="${f.day > 0 ? 'green' : f.day < 0 ? 'red' : ''}">${f.day ? '+' + f.day.toFixed(2) + '%' : '—'}</div>
+      <div>${f.cur ? '₹' + Math.round(f.cur).toLocaleString('en-IN') : 'Pending'}</div>
+      <div class="fund-action-btns">
+        <button class="act-btn" onclick="editFund(${i})">Edit</button>
+        <button class="act-btn del" onclick="deleteFund(${i})">Del</button>
+      </div>
+    </div>`).join('');
+}
+
+// ─── Edit Fund ──────────────────────────────────────────
+function editFund(i) {
+  editingIndex = i;
+  const f = funds[i];
+  document.getElementById('ef-name').value = f.name;
+  document.getElementById('ef-cat').value = f.cat;
+  document.getElementById('ef-sip').value = f.sip;
+  document.getElementById('ef-inv').value = f.inv;
+  document.getElementById('ef-cur').value = f.cur;
+  document.getElementById('ef-ret').value = f.ret;
+  document.getElementById('fund-form-title').textContent = 'Edit fund';
+  document.getElementById('fund-save-btn').textContent = 'Save changes';
+  document.getElementById('fund-cancel-btn').style.display = 'inline-block';
+  document.getElementById('fund-form-status').innerHTML = '';
+  document.getElementById('add-fund-card').scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+function cancelEdit() {
+  editingIndex = -1;
+  clearFundForm();
+  document.getElementById('fund-form-title').textContent = 'Add fund';
+  document.getElementById('fund-save-btn').textContent = 'Add fund';
+  document.getElementById('fund-cancel-btn').style.display = 'none';
+  document.getElementById('fund-form-status').innerHTML = '';
+}
+
+function saveFundForm() {
+  const name = document.getElementById('ef-name').value.trim();
+  if (!name) {
+    showFormMsg('fund-form-status', 'Please enter a fund name.', false);
+    return;
+  }
+  const f = {
+    name,
+    cat: document.getElementById('ef-cat').value,
+    sip: parseFloat(document.getElementById('ef-sip').value) || 0,
+    inv: parseFloat(document.getElementById('ef-inv').value) || 0,
+    cur: parseFloat(document.getElementById('ef-cur').value) || 0,
+    ret: parseFloat(document.getElementById('ef-ret').value) || 0,
+    day: editingIndex >= 0 ? funds[editingIndex].day : 0
+  };
+  if (editingIndex >= 0) {
+    funds[editingIndex] = f;
+    showFormMsg('fund-form-status', 'Fund updated successfully!', true);
+    cancelEdit();
+  } else {
+    funds.push(f);
+    showFormMsg('fund-form-status', 'Fund added successfully!', true);
+    clearFundForm();
+  }
+  renderFundList();
+}
+
+function deleteFund(i) {
+  funds.splice(i, 1);
+  if (editingIndex === i) cancelEdit();
+  renderFundList();
+  showFormMsg('fund-form-status', 'Fund deleted.', true);
+}
+
+function clearFundForm() {
+  ['ef-name','ef-sip','ef-inv','ef-cur','ef-ret'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('ef-cat').selectedIndex = 0;
+}
+
+function showFormMsg(elId, msg, ok) {
+  const el = document.getElementById(elId);
+  el.innerHTML = `<div class="status-msg ${ok ? 'status-ok' : 'status-err'}">${msg}</div>`;
+  setTimeout(() => { el.innerHTML = ''; }, 3000);
+}
+
+// ─── Manual fund from Import tab ────────────────────────
+function addManualFund() {
+  const name = document.getElementById('mf-name').value.trim();
+  if (!name) {
+    document.getElementById('manual-status').innerHTML = '<div class="ai-state ai-err" style="margin-top:8px">Please enter a fund name.</div>';
+    return;
+  }
+  const f = {
+    name,
+    cat: document.getElementById('mf-cat').value,
+    sip: parseFloat(document.getElementById('mf-sip').value) || 0,
+    inv: parseFloat(document.getElementById('mf-inv').value) || 0,
+    cur: parseFloat(document.getElementById('mf-cur').value) || 0,
+    ret: parseFloat(document.getElementById('mf-ret').value) || 0,
+    day: 0
+  };
+  funds.push(f);
+  document.getElementById('manual-status').innerHTML = '<div class="ai-state ai-done" style="margin-top:8px">Fund added! Go to Funds tab to see your portfolio.</div>';
+  ['mf-name','mf-sip','mf-inv','mf-cur','mf-ret'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('mf-cat').selectedIndex = 0;
+  setTimeout(() => { document.getElementById('manual-status').innerHTML = ''; }, 3500);
+}
+
+// ─── Image upload — preview only ────────────────────────
+function handleImg(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const preview = document.getElementById('img-preview');
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    document.getElementById('ai-status').innerHTML =
+      '<div class="ai-state ai-done">Screenshot loaded. Use manual entry below to add your funds.</div>';
+  };
+  reader.readAsDataURL(file);
+}
+
+// ─── Dashboard Charts ────────────────────────────────────
+new Chart(document.getElementById('dc1').getContext('2d'), {
+  type: 'line',
+  data: {
+    labels: ['Oct','Nov','Dec','Jan','Feb','Mar','Apr'],
+    datasets: [
+      {label:'Value',data:[65000,66800,68200,70100,71500,72900,74227],borderColor:'#3266ad',borderWidth:2,pointRadius:0,fill:false,tension:.4},
+      {label:'Invested',data:[60000,62000,64000,66000,67000,68000,69497],borderColor:'#b5b3ab',borderWidth:1.5,borderDash:[4,4],pointRadius:0,fill:false,tension:.4}
+    ]
+  },
+  options: {
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{
+      y:{ticks:{callback:v=>'₹'+(v/1000).toFixed(0)+'K',font:{size:10}},grid:{color:'rgba(128,128,128,.08)'}},
+      x:{grid:{display:false},ticks:{font:{size:10}}}
+    }
+  }
+});
+
+new Chart(document.getElementById('dc2').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: ['Taiwan','Silver','Motilal','Kotak','Parag'],
+    datasets:[{label:'Returns %',data:[14.59,8.14,5.58,4.80,2.06],backgroundColor:['#3266ad','#8063c7','#D85A30','#2d7d46','#BA7517'],borderRadius:4}]
+  },
+  options: {
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{
+      y:{ticks:{callback:v=>v+'%',font:{size:10}},grid:{color:'rgba(128,128,128,.08)'}},
+      x:{grid:{display:false},ticks:{font:{size:10}}}
+    }
+  }
+});
+
+new Chart(document.getElementById('dc3').getContext('2d'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Flexi cap','Mid cap','Small cap','Large cap','International','Commodity'],
+    datasets:[{data:[27,24,24,15,6,6],backgroundColor:['#3266ad','#8063c7','#D85A30','#2d7d46','#BA7517','#D4537E'],borderWidth:3,borderColor:'transparent'}]
+  },
+  options: {
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12,padding:10}}}
+  }
+});
+
+// ─── Projection Chart ────────────────────────────────────
+let projChart = null;
+function initProjChart() {
+  if (projChart) return;
+  projChart = new Chart(document.getElementById('projChart').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [
+        {label:'Invested',data:[],borderColor:'#b5b3ab',borderDash:[4,4],borderWidth:1.5,pointRadius:0,fill:false,tension:.4},
+        {label:'10% CAGR',data:[],borderColor:'#3266ad',borderWidth:2,pointRadius:0,fill:false,tension:.4},
+        {label:'15% CAGR',data:[],borderColor:'#2d7d46',borderWidth:2.5,borderDash:[6,3],pointRadius:0,fill:false,tension:.4},
+        {label:'18% CAGR',data:[],borderColor:'#BA7517',borderWidth:2,pointRadius:0,fill:false,tension:.4},
+      ]
+    },
+    options: {
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmt(c.raw)}}},
+      scales:{
+        y:{ticks:{callback:v=>fmt(v),font:{size:10}},grid:{color:'rgba(128,128,128,.08)'}},
+        x:{grid:{display:false},ticks:{font:{size:10}}}
+      }
+    }
+  });
+}
+
+function calcProj() {
+  const sip = parseFloat(document.getElementById('p-sip').value) || 17000;
+  const step = parseFloat(document.getElementById('p-step').value) || 0;
+  const corp = parseFloat(document.getElementById('p-corp').value) || 0;
+  function calc(rate) {
+    let tot = corp, inv = corp, labels = [], vals = [], invs = [];
+    for (let y = 1; y <= 10; y++) {
+      const s = sip * Math.pow(1 + step / 100, y - 1);
+      const r = rate / 100 / 12;
+      tot = tot * Math.pow(1 + r, 12) + s * ((Math.pow(1 + r, 12) - 1) / r) * (1 + r);
+      inv += s * 12;
+      labels.push('Yr ' + y); vals.push(Math.round(tot)); invs.push(Math.round(inv));
+    }
+    return {tot, inv, labels, vals, invs};
+  }
+  const c10 = calc(10), c15 = calc(15), c18 = calc(18);
+  document.getElementById('proj-metrics').innerHTML = `
+    <div class="m"><span class="ml">Invested</span><div class="mv">${fmt(c15.inv)}</div></div>
+    <div class="m"><span class="ml">At 10% CAGR</span><div class="mv">${fmt(c10.tot)}</div></div>
+    <div class="m"><span class="ml">At 15% CAGR</span><div class="mv blue">${fmt(c15.tot)}</div></div>
+    <div class="m"><span class="ml">At 18% CAGR</span><div class="mv green">${fmt(c18.tot)}</div></div>`;
+  if (!projChart) return;
+  projChart.data.labels = c15.labels;
+  projChart.data.datasets[0].data = c15.invs;
+  projChart.data.datasets[1].data = c10.vals;
+  projChart.data.datasets[2].data = c15.vals;
+  projChart.data.datasets[3].data = c18.vals;
+  projChart.update();
+}
+
+function calcMilestones() {
+  const sip = parseFloat(document.getElementById('p-sip').value) || 17000;
+  const corp = parseFloat(document.getElementById('p-corp').value) || 0;
+  function calcY(yrs) {
+    let t = corp; const r = 0.15 / 12;
+    for (let y = 1; y <= yrs; y++) { t = t * Math.pow(1+r,12) + sip * ((Math.pow(1+r,12)-1)/r) * (1+r); }
+    return Math.round(t);
+  }
+  document.getElementById('milestones').innerHTML = [3,5,7,10].map(y => {
+    const v = calcY(y); const inv = Math.round(corp + sip * y * 12);
+    return `<div class="m"><span class="ml">Year ${y}</span><div class="mv">${fmt(v)}</div><div class="ms green">+${fmt(v - inv)}</div></div>`;
+  }).join('');
+}
+
+function renderFundProj() {
+  document.getElementById('fund-proj').innerHTML = funds.map(f => {
+    const r = 0.15 / 12, n = 120;
+    const fv = Math.round(f.sip * ((Math.pow(1+r,n)-1)/r) * (1+r));
+    const inv = f.sip * 120;
+    return `<div class="fg row" style="grid-template-columns:minmax(0,2fr) 65px 70px 75px">
+      <div><div class="fn">${f.name}</div><div class="fs">${f.cat}</div></div>
+      <div>₹${f.sip.toLocaleString('en-IN')}</div>
+      <div>₹${(inv/100000).toFixed(1)}L</div>
+      <div class="blue">₹${(fv/100000).toFixed(1)}L</div>
+    </div>`;
+  }).join('');
+}
+
+// ─── Goal Calculator ─────────────────────────────────────
+function calcGoal() {
+  const goal = parseFloat(document.getElementById('g-amt').value) || 10000000;
+  const yrs = parseFloat(document.getElementById('g-yrs').value) || 10;
+  const rate = parseFloat(document.getElementById('g-rate').value) || 15;
+  const r = rate / 100 / 12, n = Math.round(yrs * 12);
+  const req = goal * r / ((Math.pow(1+r,n) - 1) * (1+r));
+  const gap = req - 17000;
+  document.getElementById('goal-metrics').innerHTML = `
+    <div class="m"><span class="ml">Target</span><div class="mv">${fmt(goal)}</div></div>
+    <div class="m"><span class="ml">Required SIP</span><div class="mv">${fmt(req)}</div></div>
+    <div class="m"><span class="ml">Current SIP</span><div class="mv">₹17,000</div></div>
+    <div class="m"><span class="ml">Gap</span><div class="mv ${gap > 0 ? 'red' : 'green'}">${gap > 0 ? '+' : '-'}${fmt(Math.abs(gap))}</div></div>`;
+}
+
+// ─── Step-up Chart ───────────────────────────────────────
+let stepupInst = null;
+function initStepupChart() {
+  if (stepupInst) return;
+  const sip = 17000, corp = 74227, r = 0.15 / 12;
+  const labels = [], flat = [], stepped = [];
+  for (let y = 1; y <= 10; y++) {
+    let tf = corp, ts = corp;
+    for (let yy = 1; yy <= y; yy++) {
+      const sf = sip, ss = sip * Math.pow(1.10, yy - 1);
+      tf = tf * Math.pow(1+r,12) + sf * ((Math.pow(1+r,12)-1)/r) * (1+r);
+      ts = ts * Math.pow(1+r,12) + ss * ((Math.pow(1+r,12)-1)/r) * (1+r);
+    }
+    labels.push('Yr ' + y); flat.push(Math.round(tf)); stepped.push(Math.round(ts));
+  }
+  stepupInst = new Chart(document.getElementById('stepupChart').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {label:'Flat ₹17K',data:flat,borderColor:'#3266ad',borderWidth:2,pointRadius:0,fill:false,tension:.4},
+        {label:'10% step-up',data:stepped,borderColor:'#2d7d46',borderWidth:2.5,borderDash:[6,3],pointRadius:0,fill:false,tension:.4}
+      ]
+    },
+    options: {
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{size:10},boxWidth:10}}},
+      scales:{
+        y:{ticks:{callback:v=>fmt(v),font:{size:10}},grid:{color:'rgba(128,128,128,.08)'}},
+        x:{grid:{display:false},ticks:{font:{size:10}}}
+      }
+    }
+  });
+}
+
+// ─── Radar Chart ─────────────────────────────────────────
+let radarInst = null;
+function initRadar() {
+  if (radarInst) return;
+  radarInst = new Chart(document.getElementById('radarChart').getContext('2d'), {
+    type: 'radar',
+    data: {
+      labels: ['Diversification','Returns','Stability','Risk mgmt','Consistency'],
+      datasets: [{
+        label: 'Your portfolio',
+        data: [88,85,80,92,95],
+        borderColor: '#3266ad',
+        backgroundColor: 'rgba(50,102,173,0.12)',
+        borderWidth: 2,
+        pointRadius: 3,
+        pointBackgroundColor: '#3266ad'
+      }]
+    },
+    options: {
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{r:{min:0,max:100,ticks:{display:false,stepSize:20},pointLabels:{font:{size:11}}}}
+    }
+  });
+}
+
+// ─── Init ────────────────────────────────────────────────
+renderFundList();
+</script>
+</body>
+</html>
