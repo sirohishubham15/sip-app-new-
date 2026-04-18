@@ -549,9 +549,7 @@ function addManualFund() {
 
 // ─── Image upload — preview only ────────────────────────
 function handleImg(evt){
-  const file = evt.target.files[0];
-  if(!file) return;
-
+  
   const preview = document.getElementById('img-preview');
   const reader = new FileReader();
 
